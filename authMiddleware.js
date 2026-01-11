@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 // Middleware pour protéger les routes Admin / SuperAdmin
-module.exports = (req, res, next) {
+module.exports = function (req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
