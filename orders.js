@@ -5,19 +5,6 @@ const mongoose = require('mongoose');
 const operatorGateway = require('../services/operatorGateway');
 const logger = require('../services/logger');
 const { io } = require('../websocket'); // si websocket exporte l'instance io
-
-// ===== Modèle Order =====
-const orderSchema = new mongoose.Schema({
-  userId: { type: String, required: true },
-  operator: { type: String, enum: ['airtel','moov','zamani'], required: true },
-  plan: { type: String },
-  phone: { type: String, required: true },
-  type: { type: String, enum: ['DATA','CREDIT'], default: 'CREDIT' },
-  amount: { type: Number, required: true },
-  price: { type: Number },
-  status: { type: String, enum: ['PENDING','DELIVERED','FAILED'], default: 'PENDING' },
-  createdAt: { type: Date, default: Date.now }
-});
 const Order = require("../models/Order");
 
 // ===== Création d'une commande =====
