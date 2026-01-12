@@ -1,12 +1,14 @@
 // backend/routes/admin-analytics.js
 const express = require("express");
 const Order = require("../models/Order");
-const { requireRole } = require("../utils/roles");
+const auth = require("../middleware/authMiddleware");
+const { isAdmin } = require("../utils/roles");
 
 const router = express.Router();
 
 // ✅ Statistiques globales, par opérateur et journalières
-router.get("/stats", requireRole("admin","superadmin"), async (req,res) => {
+router.get("/overview", auth, isAdmin, async (req, res) => {
+  res.json({ message: "Analytics admin OK" });
   try {
     // Statistiques globales
     const globalAgg = await Order.aggregate([
