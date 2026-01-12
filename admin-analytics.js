@@ -2,13 +2,17 @@
 const express = require("express");
 const Order = require("../models/Order");
 const auth = require("../middleware/authMiddleware");
-const { isAdmin } = require("../utils/roles");
+const { requireRole } = require("../utils/roles");
 
 const router = express.Router();
 
 // ✅ Statistiques globales, par opérateur et journalières
-router.get("/overview", auth, isAdmin, async (req, res) => {
-  res.json({ message: "Analytics admin OK" });
+router.get( "/admin/orders",
+  requireRole("admin", "superadmin"),
+  (req, res) => {
+    res.json({ message: "OK accès autorisé" });
+  }
+);
   try {
     // Statistiques globales
     const globalAgg = await Order.aggregate([
