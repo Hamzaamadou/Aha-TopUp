@@ -1,55 +1,29 @@
-// backend/routes/admin-analytics.js
 const express = require("express");
-const Order = require("../models/Order");
-const auth = require("../middleware/authMiddleware");
-const { requireRole } = require("../utils/roles");
-
 const router = express.Router();
+const Order = require("../models/Order");
+const User = require("../models/User");
+const auth = require("../middleware/authMiddleware");
 
-// ✅ Statistiques globales, par opérateur et journalières
-router.get( "/admin/orders",
-  requireRole("admin", "superadmin"),
-  (req, res) => {
-    res.json({ message: "OK accès autorisé" });
-  }
-);
+// 📊 Analytics admin
+router.get("/analytics", auth, async (req, res) => {
   try {
-    // Statistiques globales
-    const globalAgg = await Order.aggregate([
-      { $match: { status: "delivered" }},
-      { $group: {
-        _id: null,
-        totalRevenue: { $sum: "$price" },
-        totalOrders: { $sum: 1 }
-      }}
-    ]);
-    const global = globalAgg[0] || { totalRevenue: 0, totalOrders: 0 };
+    const users = await User.countDocuments();
+    const orders = await Order.countDocuments();
 
-    // Par opérateur
-    const byOperator = await Order.aggregate([
-      { $match: { status: "delivered" }},
-      { $group: {
-        _id: "$operator",
-        revenue: { $sum: "$price" },
-        count: { $sum: 1 }
-      }}
+    const revenueAgg = await Order.aggregate([
+      { $group: { _id: null, total: { $sum: "$price" } } }
     ]);
 
-    // Statistiques journalières
-    const daily = await Order.aggregate([
-      { $match: { status: "delivered" }},
-      { $group: {
-        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }},
-        revenue: { $sum: "$price" },
-        count: { $sum: 1 }
-      }},
-      { $sort: { "_id": 1 }}
-    ]);
+    const revenue = revenueAgg.length > 0 ? revenueAgg[0].total : 0;
 
-    res.json({ global, byOperator, daily });
+    res.json({
+      users,
+      orders,
+      revenue
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Erreur serveur" });
+    res.status(500).json({ message: "Erreur analytics" });
   }
 });
 
