@@ -1,68 +1,43 @@
 const express = require("express");
-const { PrismaClient } = require("@prisma/client");
-
 const router = express.Router();
-const prisma = new PrismaClient();
+const auth = require("../middleware/authMiddleware");
+const User = require("../models/User");
 
-/**
- * 📊 Statistiques complètes par userId
- */
-router.get("/stats/:userId", async (req, res) => {
-  const { userId } = req.params;
-
+// 💰 Obtenir le solde du wallet
+router.get("/", auth, async (req, res) => {
   try {
-    const wallet = await prisma.wallet.findUnique({
-      where: { userId }
-    });
+    const user = await User.findById(req.user.id).select("balance");
 
-    if (!wallet) {
-      return res.status(404).json({ message: "Wallet non trouvé" });
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur introuvable" });
     }
 
-    const ordersStats = await prisma.order.aggregate({
-      where: { userId },
-      _sum: { price: true },
-      _count: { id: true }
-    });
-
-    const transactionsStats = await prisma.transaction.aggregate({
-      where: { userId },
-      _sum: { amount: true },
-      _count: { id: true }
-    });
-
-    res.json({
-      wallet,
-      orders: {
-        totalAmount: ordersStats._sum.price || 0,
-        totalOrders: ordersStats._count.id || 0
-      },
-      transactions: {
-        totalAmount: transactionsStats._sum.amount || 0,
-        totalTransactions: transactionsStats._count.id || 0
-      }
-    });
+    res.json({ balance: user.balance || 0 });
   } catch (err) {
-    console.error("Erreur récupération wallet :", err);
+    console.error(err);
     res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
-/**
- * 💰 Solde du wallet
- */
-router.get("/balance/:userId", async (req, res) => {
+// ➕ Ajouter de l'argent (admin / système)
+router.post("/add", auth, async (req, res) => {
   try {
-    const { userId } = req.params;
-    const wallet = await prisma.wallet.findUnique({
-      where: { userId }
-    });
+    const { amount } = req.body;
 
-    res.json({
-      balance: wallet ? wallet.balance : 0
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Montant invalide" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $inc: { balance: amount } },
+      { new: true }
+    );
+
+    res.json({ balance: user.balance });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
