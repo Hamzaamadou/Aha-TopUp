@@ -1,9 +1,12 @@
+// backend/server.js
 require("dotenv").config();
+
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const http = require("http");
+
+const connectDB = require("./db");
 const websocket = require("./websocket");
 
 // Routes
@@ -19,29 +22,49 @@ const walletRoutes = require("./routes/wallet");
 const app = express();
 const server = http.createServer(app);
 
+// =======================
+// Connexion MongoDB
+// =======================
+connectDB();
+
+// =======================
 // WebSocket
+// =======================
 websocket(server);
 
-// Middleware
-app.use(cors({ origin: ["https://ahatopup.netlify.app"] }));
+// =======================
+// Middlewares
+// =======================
+app.use(cors({
+  origin: ["https://ahatopup.netlify.app"],
+  credentials: true
+}));
 app.use(bodyParser.json());
+app.use(express.json());
 
-// Routes principales
-app.use("/auth", authRoutes);
-app.use("/orders", ordersRoutes);
-app.use("/admin", adminRoutes);
-app.use("/admin/analytics", adminAnalyticsRoutes);
-app.use("/webhook", webhookRoutes);
-app.use("/plans", plansRoutes);
-app.use("/credit", creditRoutes);
-app.use("/wallet", walletRoutes);
+// =======================
+// Routes API
+// =======================
+app.use("/api/auth", authRoutes);
+app.use("/api/orders", ordersRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/admin/analytics", adminAnalyticsRoutes);
+app.use("/api/webhook", webhookRoutes);
+app.use("/api/plans", plansRoutes);
+app.use("/api/credit", creditRoutes);
+app.use("/api/wallet", walletRoutes);
 
-// MongoDB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connecté"))
-  .catch((err) => console.error("Erreur MongoDB :", err));
+// =======================
+// Route test
+// =======================
+app.get("/", (req, res) => {
+  res.send("Aha TopUp API 🚀");
+});
 
+// =======================
 // Lancement serveur
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// =======================
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
