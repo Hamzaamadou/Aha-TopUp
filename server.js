@@ -3,7 +3,6 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-const bodyParser = require("body-parser");
 const http = require("http");
 
 const connectDB = require("./db");
@@ -39,7 +38,7 @@ app.use(cors({
   origin: ["https://ahatopup.netlify.app"],
   credentials: true
 }));
-app.use(bodyParser.json());
+
 app.use(express.json());
 
 // =======================
